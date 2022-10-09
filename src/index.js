@@ -1,7 +1,11 @@
 //const csBic = require('./app/puppeteerBicocca')
 //csBic.test()
 require('dotenv').config()
-
+process.on('uncaughtException', (err) => {
+	//todo add logger
+   console.log('errore')
+   console.log(err)    
+});
 //const telegram = require('./app/telegram')
 
 //telegram.init()
