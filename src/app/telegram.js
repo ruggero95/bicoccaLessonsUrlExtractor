@@ -5,7 +5,8 @@ const offline = process.env.OFFLINE || 'false'//non bool from env
 const PORT = process.env.PORT || 3029;
 const URL = process.env.URL || 'https://hps.solunicanet.it';
 const axios = require('axios');
-const {Telegraf} = require('telegraf')
+const { Telegraf, Markup, Scenes } = require('telegraf')
+const { enter, leave } = Scenes.Stage;
 const bicocca = require('./puppeteerBicocca')
 const STD_MESSAGE = 'elaboro...😁'
 const telegram = {
@@ -44,5 +45,22 @@ const telegram = {
         })
     }
 }
+const tel = {
+    linkLesson: "Link Lesson",
+    linkCourse: "Link Course",
+    start: async (ctx) => {
+        return await ctx.reply('Scegli un opzione')
+    },
+    commands: async (ctx) => {
+        return await ctx.reply('Choose an option', Markup
+            .keyboard([
+                [tel.linkLesson, tel.linkCourse]
+            ])
+            .resize()
+        )
+    },
+   
 
-module.exports = telegram
+}
+
+module.exports = tel
