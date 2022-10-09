@@ -5,13 +5,25 @@ const puppeteer = require('puppeteer')
 const fs = require('fs')
 const user = process.env.USER || ''
 const psw = process.env.PSW || ''
+
+const EventEmitter=require('events');
+const downloadUpdater = new EventEmitter();
+
 const puppeteerBicoccaJs = {
+    videoPath : `${__dirname}/../../video`,
     test: async () => {
         let res = await puppeteerBicoccaJs.setup('https://elearning.unimib.it/mod/kalvidres/view.php?id=598157')
         console.log(res)
     },
-    checkUrlValidity: (url) => {
+    checkLessonUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/mod\/kalvidres\/view\.php\?id\=/
+        if (url.match(pattern)) {
+            return true
+        }
+        return false
+    },
+    checkCourseUrlValidity:(url)=>{
+        let pattern  = /https\:\/\/elearning\.unimib\.it\/course\/view\.php\?id\=/
         if (url.match(pattern)) {
             return true
         }
@@ -20,7 +32,7 @@ const puppeteerBicoccaJs = {
     doLogin: async () => {
         return new Promise(async (resolve, reject) => {
             //login:  https://idp-idm.unimib.it/idp/profile/SAML2/Redirect/SSO?execution=e1s2
-            const browser = await puppeteer.launch({ headless: true, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', });
+            const browser = await puppeteer.launch({ headless: false, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', });
             const page = await browser.newPage();
             //await page.setViewport({ width: 800, height: 600 })
             await page.goto('https://elearning.unimib.it/login/index.php');
@@ -103,7 +115,7 @@ const puppeteerBicoccaJs = {
     },
     convertM3U8: async (links, folderName)=>{
         for(let i in links){
-            let fileName = `${__dirname}/../video/${folderName}/${links[i].title}.mp4`
+            let fileName = `${puppeteerBicoccaJs.videoPath}/${folderName}/${links[i].title}.mp4`
             console.log(fileName)
             if(!fs.existsSync(fileName)){
                 console.log('file non esiste')
@@ -118,6 +130,8 @@ const puppeteerBicoccaJs = {
                 //stoppo per 10 secondi ogni 10 download
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
+            downloadUpdater.emit('update', {elementi:links.length, elaborati:i});
+
         }
         return
     },
@@ -128,14 +142,16 @@ const puppeteerBicoccaJs = {
         let folderName = await page.title();
         
         folderName = puppeteerBicoccaJs.sanitizeName(folderName)
-        let dataBkp = `${__dirname}/../video/${folderName}/data.json`
+        
+        const coursePath = `${puppeteerBicoccaJs.videoPath}/${folderName}`
+        let dataBkp = `${coursePath}/data.json`
 
-        if(!fs.existsSync(`${__dirname}/../video/${folderName}/`)){
-            fs.mkdirSync(`${__dirname}/../video/${folderName}/`, { recursive: true })
+        if(!fs.existsSync(coursePath)){
+            fs.mkdirSync(coursePath, { recursive: true })
         }
 
         if(fs.existsSync(dataBkp)){
-            browser.close()
+            await browser.close()
             console.log('')
             const data = fs.readFileSync(dataBkp, 'utf8')
             result = JSON.parse(data)
@@ -177,4 +193,4 @@ const puppeteerBicoccaJs = {
 
 }
 
-module.exports = puppeteerBicoccaJs
+module.exports = {puppeteerBicoccaJs, downloadUpdater}

@@ -7,8 +7,9 @@ const URL = process.env.URL || 'https://hps.solunicanet.it';
 const axios = require('axios');
 const { Telegraf, Markup, Scenes } = require('telegraf')
 const { enter, leave } = Scenes.Stage;
-const bicocca = require('./puppeteerBicocca')
-const STD_MESSAGE = 'elaboro...😁'
+const {puppeteerBicoccaJs, downloadUpdater} = require('./puppeteerBicocca')
+const WAIT_MESSAGE = 'Wait some minutes...⏳'
+const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
 const telegram = {
     init: () => {
         const app = new Telegraf(API_TOKEN);
@@ -35,8 +36,8 @@ const telegram = {
             }
             ctx.reply(STD_MESSAGE);
             let url = ctx.message.text
-            if (bicocca.checkUrlValidity(url)) {
-                let res_url = await bicocca.setup(url)
+            if (puppeteerBicoccaJs.checkUrlValidity(url)) {
+                let res_url = await puppeteerBicoccaJs.setup(url)
                 ctx.reply(res_url)
             } else {
                 ctx.reply('Url non corretto');
@@ -66,12 +67,12 @@ const tel = {
         //extract link of a lesson to for VLC network in order to accelerate it or see on ipads
         const s = new Scenes.BaseScene(tel.linkLessonScene);
         s.enter(ctx => ctx.reply("Send link of a lesson"));
-        
+
         //on leave resend commands
         s.leave(ctx => tel.commands(ctx));
         s.command("back", leave());
         //if change button, change scene
-        s.hears(tel.linkCourse, (ctx)=>ctx.scene.enter(tel.linkCourseScene))
+        s.hears(tel.linkCourse, (ctx) => ctx.scene.enter(tel.linkCourseScene))
         //start analisis
         s.on("text", ctx => tel.startLinkScan(ctx));
         s.on("message", ctx => ctx.reply("Only link please"));
@@ -85,19 +86,34 @@ const tel = {
         s.leave(ctx => tel.commands(ctx));
         s.command("back", leave());
         //if change button, change scene
-        s.hears(tel.linkLesson, (ctx)=>ctx.scene.enter(tel.linkLessonScene))
-        s.on("text", ctx => ctx.reply(ctx.message.text));
+        s.hears(tel.linkLesson, (ctx) => ctx.scene.enter(tel.linkLessonScene))
+        s.on("text", ctx => tel.startCourseScan(ctx));
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
-    startLinkScan: async(ctx)=>{
-        let url  =ctx.message.text
-        if (bicocca.checkUrlValidity(url)) {
-            await ctx.reply('Wait some minutes...⏲️')
-            let res_url = await bicocca.setup(url)
+    startLinkScan: async (ctx) => {
+        let url = ctx.message.text
+        if (puppeteerBicoccaJs.checkLessonUrlValidity(url)) {
+            await ctx.reply(WAIT_MESSAGE)
+            let res_url = await puppeteerBicoccaJs.setup(url)
             return await ctx.reply(res_url)
         } else {
-            return await ctx.reply('Url invalid');
+            return await ctx.reply('Url invalid for a lesson');
+        }
+    },
+    startCourseScan: async (ctx) => {
+        let url = ctx.message.text
+        if (puppeteerBicoccaJs.checkCourseUrlValidity(url)) {
+            let wait = await ctx.reply(WAIT_MESSAGE_COURSE)
+            //todo catch event on processing and update a message
+            downloadUpdater.on('update', async (data)=>{
+                await ctx.telegram.editMessageText(wait.chat.id, wait.message_id,undefined,`${WAIT_MESSAGE_COURSE}\n\r Elementi:${data.elementi}, Elaborati:${data.elaborati} `)
+            })            
+
+            await puppeteerBicoccaJs.pageAnalizer(url)
+            return await ctx.reply('End')
+        } else {
+            return await ctx.reply('Url invalid for a course');
         }
     }
 }
