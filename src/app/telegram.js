@@ -48,18 +48,47 @@ const telegram = {
 const tel = {
     linkLesson: "Link Lesson",
     linkCourse: "Link Course",
+    linkLessonScene: "linkLesson",
+    linkCourseScene: "linkCourse",
     start: async (ctx) => {
         return await ctx.reply('Scegli un opzione')
     },
     commands: async (ctx) => {
         return await ctx.reply('Choose an option', Markup
             .keyboard([
-                [tel.linkLesson, tel.linkCourse]
+                [tel.linkLesson, tel.linkCourse],
+                ['/back'],
             ])
             .resize()
         )
     },
-   
+    getLinkLessonScene: () => {
+        const s = new Scenes.BaseScene(tel.linkLessonScene);
+        s.enter(ctx => ctx.reply("Send link of a lesson"));
+        
+        //on leave resend commands
+        s.leave(ctx => tel.commands(ctx));
+        s.command("back", leave());
+        //if change button, change scene
+        s.hears(tel.linkCourse, (ctx)=>ctx.scene.enter(tel.linkCourseScene))
+        //start analisis
+        s.on("text", ctx => ctx.reply(ctx.message.text));
+        s.on("message", ctx => ctx.reply("Only link please"));
+        return s
+    },
+    getLinkCourseScene: () => {
+        const s = new Scenes.BaseScene(tel.linkCourseScene);
+        s.enter(ctx => ctx.reply("Send link of a course"));
+
+        //on leave resend commands
+        s.leave(ctx => tel.commands(ctx));
+        s.command("back", leave());
+        //if change button, change scene
+        s.hears(tel.linkLesson, (ctx)=>ctx.scene.enter(tel.linkLessonScene))
+        s.on("text", ctx => ctx.reply(ctx.message.text));
+        s.on("message", ctx => ctx.reply("Only link please"));
+        return s
+    },
 
 }
 
