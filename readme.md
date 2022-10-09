@@ -1,0 +1,6 @@
+Esempi url
+
+https://kaf.elearning.unimib.it/browseandembed/index/media-redirect/entryid/1_v2u47kjs/showDescription/false/showTitle/false/showTags/false/showDuration/false/showOwner/false/showUploadDate/false/playerSize/400x285/playerSkin/46495023/thumbEmbed//autoPlay//startTime//endTime/
+
+giusto -> https://elearning.unimib.it/mod/kalvidres/lti_launch.php?courseid=31195&height=285&width=400&withblocks=0&source=http%3A%2F%2Fkaltura-kaf-uri.com%2Fbrowseandembed%2Findex%2Fmedia%2Fentryid%2F1_u943i5rf%2FshowDescription%2Ffalse%2FshowTitle%2Ffalse%2FshowTags%2Ffalse%2FshowDuration%2Ffalse%2FshowOwner%2Ffalse%2FshowUploadDate%2Ffalse%2FplayerSize%2F400x285%2FplayerSkin%2F41280022%2F
+          https://elearning.unimib.it/mod/kalvidres/lti_launch.php?courseid=31195&height=285&width=400&withblocks=0&source=http%3A%2F%2Fkaltura-kaf-uri.com%2Fbrowseandembed%2Findex%2Fmedia%2Fentryid%2F1_v2u47kjs%2FshowDescription%2Ffalse%2FshowTitle%2Ffalse%2FshowTags%2Ffalse%2FshowDuration%2Ffalse%2FshowOwner%2Ffalse%2FshowUploadDate%2Ffalse%2FplayerSize%2F400x285%2FplayerSkin%2F46495023%2F
