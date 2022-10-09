@@ -63,6 +63,7 @@ const tel = {
         )
     },
     getLinkLessonScene: () => {
+        //extract link of a lesson to for VLC network in order to accelerate it or see on ipads
         const s = new Scenes.BaseScene(tel.linkLessonScene);
         s.enter(ctx => ctx.reply("Send link of a lesson"));
         
@@ -72,7 +73,7 @@ const tel = {
         //if change button, change scene
         s.hears(tel.linkCourse, (ctx)=>ctx.scene.enter(tel.linkCourseScene))
         //start analisis
-        s.on("text", ctx => ctx.reply(ctx.message.text));
+        s.on("text", ctx => tel.startLinkScan(ctx));
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
@@ -89,7 +90,16 @@ const tel = {
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
-
+    startLinkScan: async(ctx)=>{
+        let url  =ctx.message.text
+        if (bicocca.checkUrlValidity(url)) {
+            await ctx.reply('Wait some minutes...⏲️')
+            let res_url = await bicocca.setup(url)
+            return await ctx.reply(res_url)
+        } else {
+            return await ctx.reply('Url invalid');
+        }
+    }
 }
 
 module.exports = tel
