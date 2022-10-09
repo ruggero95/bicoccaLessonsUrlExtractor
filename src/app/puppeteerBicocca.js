@@ -1,6 +1,6 @@
 const path = require('path')
 require('dotenv').config({ path: path.resolve('./config/.env') })
-const converter = require("node-m3u8-to-mp4");
+const {mConverter} = require("node-m3u8-to-mp4");
 const puppeteer = require('puppeteer')
 const fs = require('fs')
 const user = process.env.USER || ''
@@ -120,7 +120,7 @@ const puppeteerBicoccaJs = {
             if(!fs.existsSync(fileName)){
                 console.log('file non esiste')
                 if(links[i].m3u8){                    
-                    await converter(links[i].m3u8, fileName).catch((e)=>{
+                    await mConverter(links[i].m3u8, fileName).catch((e)=>{
                         e.toString()
                     })    
                     console.log('ended'+i)
