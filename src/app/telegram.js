@@ -7,7 +7,7 @@ const URL = process.env.URL || 'https://hps.solunicanet.it';
 const axios = require('axios');
 const { Telegraf, Markup, Scenes } = require('telegraf')
 const { enter, leave } = Scenes.Stage;
-const {puppeteerBicoccaJs, downloadUpdater} = require('./puppeteerBicocca')
+const { puppeteerBicoccaJs, downloadUpdater } = require('./puppeteerBicocca')
 const WAIT_MESSAGE = 'Wait some minutes...⏳'
 const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
 const telegram = {
@@ -105,10 +105,25 @@ const tel = {
         let url = ctx.message.text
         if (puppeteerBicoccaJs.checkCourseUrlValidity(url)) {
             let wait = await ctx.reply(WAIT_MESSAGE_COURSE)
+            let collected = await ctx.reply('TotLinks:0  Collected:0')
+            let downloaded = await ctx.reply('TotLinks:0  Downloaded:0')
             //todo catch event on processing and update a message
-            downloadUpdater.on('update', async (data)=>{
-                await ctx.telegram.editMessageText(wait.chat.id, wait.message_id,undefined,`${WAIT_MESSAGE_COURSE}\n\r Elementi:${data.elementi}, Elaborati:${data.elaborati} `)
-            })            
+            downloadUpdater.on('updateCollected', async (data) => {
+                try {
+                    await ctx.telegram.editMessageText(collected.chat.id, collected.message_id, undefined, `TotLinks:${data.elementi}, Collected:${data.elaborati} `)
+                } catch (e) {
+                    console.log('error sending ctx update')
+                    console.log(e)
+                }
+            })
+            downloadUpdater.on('updateDownloaded', async (data) => {
+                try {
+                    await ctx.telegram.editMessageText(downloaded.chat.id, downloaded.message_id, undefined, `TotLinks:${data.elementi}, Downloaded:${data.elaborati} `)
+                } catch (e) {
+                    console.log('error sending ctx update')
+                    console.log(e)
+                }
+            })
 
             await puppeteerBicoccaJs.pageAnalizer(url)
             return await ctx.reply('End')
