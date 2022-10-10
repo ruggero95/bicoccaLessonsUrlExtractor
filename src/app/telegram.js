@@ -110,7 +110,7 @@ const tel = {
             //todo catch event on processing and update a message
             downloadUpdater.on('updateCollected', async (data) => {
                 try {
-                    await ctx.telegram.editMessageText(collected.chat.id, collected.message_id, undefined, `TotLinks:${data.elementi}, Collected:${data.elaborati} `)
+                    collected = await ctx.telegram.editMessageText(collected.chat.id, collected.message_id, undefined, `TotLinks:${data.elementi}, Collected:${data.elaborati} `)
                 } catch (e) {
                     console.log('error sending ctx update')
                     console.log(e)
@@ -118,7 +118,7 @@ const tel = {
             })
             downloadUpdater.on('updateDownloaded', async (data) => {
                 try {
-                    await ctx.telegram.editMessageText(downloaded.chat.id, downloaded.message_id, undefined, `TotLinks:${data.elementi}, Downloaded:${data.elaborati} `)
+                    downloaded = await ctx.telegram.editMessageText(downloaded.chat.id, downloaded.message_id, undefined, `TotLinks:${data.elementi}, Downloaded:${data.elaborati} `)
                 } catch (e) {
                     console.log('error sending ctx update')
                     console.log(e)
