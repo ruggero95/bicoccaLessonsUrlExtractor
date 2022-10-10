@@ -1,16 +1,16 @@
 const path = require('path')
 require('dotenv').config({ path: path.resolve('./config/.env') })
-const {mConverter} = require("node-m3u8-to-mp4");
+const { mConverter, mDownloader, mParser } = require("node-m3u8-to-mp4");
 const puppeteer = require('puppeteer')
 const fs = require('fs')
 const user = process.env.USER || ''
 const psw = process.env.PSW || ''
 
-const EventEmitter=require('events');
+const EventEmitter = require('events');
 const downloadUpdater = new EventEmitter();
 
 const puppeteerBicoccaJs = {
-    videoPath : `${__dirname}/../../video`,
+    videoPath: `${__dirname}/../../video`,
     test: async () => {
         let res = await puppeteerBicoccaJs.setup('https://elearning.unimib.it/mod/kalvidres/view.php?id=598157')
         console.log(res)
@@ -22,8 +22,8 @@ const puppeteerBicoccaJs = {
         }
         return false
     },
-    checkCourseUrlValidity:(url)=>{
-        let pattern  = /https\:\/\/elearning\.unimib\.it\/course\/view\.php\?id\=/
+    checkCourseUrlValidity: (url) => {
+        let pattern = /https\:\/\/elearning\.unimib\.it\/course\/view\.php\?id\=/
         if (url.match(pattern)) {
             return true
         }
@@ -44,9 +44,11 @@ const puppeteerBicoccaJs = {
             await page.waitForSelector('input[name=j_username]');
             await page.$eval('input[name=j_username]', (el, value) => el.value = value, user);
             await page.$eval('input[name=j_password]', (el, value) => el.value = value, psw);
+            await page.waitForSelector('button[name=_eventId_proceed]')
+            await page.wa
             await page.click('button[name=_eventId_proceed]');
             await puppeteerBicoccaJs.waitPage(page, false)
-            await page.waitForSelector('div[id=nav-drawer]');
+            //await page.waitForSelector('div[id=nav-drawer]');
             resolve({ page: page, browser: browser })
         })
 
@@ -58,8 +60,8 @@ const puppeteerBicoccaJs = {
         }
         return
     },
-    sanitizeName:(string)=>{
-        return string.replace('Kaltura Video Resource', '').replace(/ /g,'_').replace(/\//g,'').replace(/\\/g,'').replace(/\:/g,'').replace(/\-/g,'')
+    sanitizeName: (string) => {
+        return string.replace('Kaltura Video Resource', '').replace(/ /g, '_').replace(/\//g, '').replace(/\\/g, '').replace(/\:/g, '').replace(/\-/g, '')
     },
     getVideoUrl: async (page) => {
         return new Promise(async (resolve, reject) => {
@@ -79,7 +81,7 @@ const puppeteerBicoccaJs = {
                         // this will be executed within the page, that was loaded before
                         let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
                         pl.sendNotification('doPause')
-                    }).catch(()=>{
+                    }).catch(() => {
                         console.log('errore su pausa, la navigazione è terminata')
                     });
                     //console.log(url)
@@ -113,50 +115,73 @@ const puppeteerBicoccaJs = {
         })
 
     },
-    convertM3U8: async (links, folderName)=>{
-        for(let i in links){
-            let fileName = `${puppeteerBicoccaJs.videoPath}/${folderName}/${links[i].title}.mp4`
+    convertM3U8: async (links, folderName) => {
+        const tempPath = `${puppeteerBicoccaJs.videoPath}/${folderName}/tmp`
+        if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath)
+            fs.mkdirSync(tempPath, { recursive: true, mode: 0777 })
+        }
+        for (let i in links) {
+            let fileName = `${puppeteerBicoccaJs.videoPath}/${folderName}/${i}_${links[i].title}.mp4`
+
             console.log(fileName)
-            if(!fs.existsSync(fileName)){
-                console.log('file non esiste')
-                if(links[i].m3u8){                    
-                    await mConverter(links[i].m3u8, fileName).catch((e)=>{
-                        e.toString()
-                    })    
-                    console.log('ended'+i)
-                }                               
+            if (!fs.existsSync(fileName)) {
+                console.log('file non esiste, processo')
+                const fileLink = links[i].m3u8
+                try{
+                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath)
+                }catch(e){
+                    console.log(e.code)
+                    console.log(e)
+                    console.log('converting error')
+                    console.log('retry')
+                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath)
+                }
             }
-            if(i!=0 && i%10==0){
-                //stoppo per 10 secondi ogni 10 download
-                await new Promise(resolve => setTimeout(resolve, 10000));
-            }
-            downloadUpdater.emit('update', {elementi:links.length, elaborati:i});
+
 
         }
-        return
+        return folderName
+    },
+    processSingleM3U8: async(fileLink, fileName, i, tempPath)=>{
+        if (fileLink) {                        
+                const list = await mParser(fileLink)
+                const medias = list.map((e) => `${e.url}`)
+                await mDownloader(medias, { targetPath: tempPath })
+                await mConverter(tempPath, fileName).catch((e) => {
+                    console.log('convert error')
+                    console.log(e.toString())
+                })
+                downloadUpdater.emit('updateDownloaded', { elementi: links.length, elaborati: (i+1) });          
+        }
+        if(i!=0 && i%10==0){
+            //stoppo per 10 secondi ogni 10 download
+            await new Promise(resolve => setTimeout(resolve, 10000));
+        }
     },
     pageAnalizer: async (url) => {
         let { page, browser } = await puppeteerBicoccaJs.doLogin()
         let result = []
         await page.goto(url);
         let folderName = await page.title();
-        
+
         folderName = puppeteerBicoccaJs.sanitizeName(folderName)
-        
+
         const coursePath = `${puppeteerBicoccaJs.videoPath}/${folderName}`
         let dataBkp = `${coursePath}/data.json`
 
-        if(!fs.existsSync(coursePath)){
+        if (!fs.existsSync(coursePath)) {
             fs.mkdirSync(coursePath, { recursive: true })
         }
 
-        if(fs.existsSync(dataBkp)){
+        if (fs.existsSync(dataBkp)) {
             await browser.close()
             console.log('')
             const data = fs.readFileSync(dataBkp, 'utf8')
             result = JSON.parse(data)
             console.log(result)
-            return puppeteerBicoccaJs.convertM3U8(result, folderName)         
+            downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: result.length });
+            return puppeteerBicoccaJs.convertM3U8(result, folderName)
         }
         const elements = await page.$x('//a[@class="aalink"  and contains(@href,\'kalvidres\')]');
         //console.log(elements)
@@ -166,7 +191,7 @@ const puppeteerBicoccaJs = {
             let href = await hrefProp.jsonValue()
             let textProp = await elements[i].getProperty('textContent')
             let text = await textProp.jsonValue()
-           
+
             result = [...result, {
                 url: href,
                 title: puppeteerBicoccaJs.sanitizeName(text)
@@ -174,23 +199,24 @@ const puppeteerBicoccaJs = {
         }
 
         //cerco l m3u8
-        for(i in result){
-        //for(let i=0; i<1; i++){
+        for (i in result) {
+            //for(let i=0; i<1; i++){
             await page.goto(result[i].url);
             let url = await puppeteerBicoccaJs.getVideoUrl(page)
             if (i != 0 && i % 10 == 0) {
                 page.waitForTimeout(2000)
             }
             result[i].m3u8 = url
+            downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: (i+1) });
         }
         await browser.close();
 
         let data = JSON.stringify(result);
         fs.writeFileSync(dataBkp, data);
 
-        puppeteerBicoccaJs.convertM3U8(result, folderName)
+        return puppeteerBicoccaJs.convertM3U8(result, folderName)
     }
 
 }
 
-module.exports = {puppeteerBicoccaJs, downloadUpdater}
+module.exports = { puppeteerBicoccaJs, downloadUpdater }
