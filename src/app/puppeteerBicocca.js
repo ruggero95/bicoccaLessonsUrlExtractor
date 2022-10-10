@@ -7,6 +7,7 @@ const user = process.env.USER || ''
 const psw = process.env.PSW || ''
 
 const EventEmitter = require('events');
+const dayjs = require('dayjs');
 const downloadUpdater = new EventEmitter();
 
 const puppeteerBicoccaJs = {
@@ -45,7 +46,7 @@ const puppeteerBicoccaJs = {
             await page.$eval('input[name=j_username]', (el, value) => el.value = value, user);
             await page.$eval('input[name=j_password]', (el, value) => el.value = value, psw);
             await page.waitForSelector('button[name=_eventId_proceed]')
-            await page.wa
+            await page.waitForTimeout(2000)
             await page.click('button[name=_eventId_proceed]');
             await puppeteerBicoccaJs.waitPage(page, false)
             //await page.waitForSelector('div[id=nav-drawer]');
@@ -118,7 +119,7 @@ const puppeteerBicoccaJs = {
     convertM3U8: async (links, folderName) => {
         const tempPath = `${puppeteerBicoccaJs.videoPath}/${folderName}/tmp`
         if (fs.existsSync(tempPath)) {
-            fs.unlinkSync(tempPath)
+            fs.rmSync(tempPath,{ recursive: true })
             fs.mkdirSync(tempPath, { recursive: true, mode: 0777 })
         }
         for (let i in links) {
@@ -129,13 +130,15 @@ const puppeteerBicoccaJs = {
                 console.log('file non esiste, processo')
                 const fileLink = links[i].m3u8
                 try{
-                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath)
+                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
                 }catch(e){
                     console.log(e.code)
                     console.log(e)
-                    console.log('converting error')
-                    console.log('retry')
-                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath)
+                    console.log('converting error'+dayjs().format('YYYY-MM-DD HH:mm:ss'))
+                    console.log('retry in 10 sec')
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    console.log('retry'+dayjs().format('YYYY-MM-DD HH:mm:ss'))
+                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
                 }
             }
 
@@ -143,7 +146,7 @@ const puppeteerBicoccaJs = {
         }
         return folderName
     },
-    processSingleM3U8: async(fileLink, fileName, i, tempPath)=>{
+    processSingleM3U8: async(fileLink, fileName, i, tempPath, total)=>{
         if (fileLink) {                        
                 const list = await mParser(fileLink)
                 const medias = list.map((e) => `${e.url}`)
@@ -152,7 +155,7 @@ const puppeteerBicoccaJs = {
                     console.log('convert error')
                     console.log(e.toString())
                 })
-                downloadUpdater.emit('updateDownloaded', { elementi: links.length, elaborati: (i+1) });          
+                downloadUpdater.emit('updateDownloaded', { elementi: total, elaborati: (i+1) });          
         }
         if(i!=0 && i%10==0){
             //stoppo per 10 secondi ogni 10 download
