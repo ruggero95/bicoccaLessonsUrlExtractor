@@ -10,6 +10,9 @@ class ZipFile {
 
     constructor(destination, zipName, extension = ZipFile.extensions.ZIP , compression = 9) {
         // create a file to stream archive data to.
+        if(!fs.existsSync(destination)){
+            fs.mkdirSync(destination, { recursive: true });
+        }
         this.output = fs.createWriteStream(`${destination}/${zipName}.${extension}`);
         this.archive = archiver(extension, {
             zlib: { level: compression } // Sets the compression level.
