@@ -1,6 +1,45 @@
-Esempi url
+# bicoccaLessonUrlExtractor
 
-https://kaf.elearning.unimib.it/browseandembed/index/media-redirect/entryid/1_v2u47kjs/showDescription/false/showTitle/false/showTags/false/showDuration/false/showOwner/false/showUploadDate/false/playerSize/400x285/playerSkin/46495023/thumbEmbed//autoPlay//startTime//endTime/
+## Table of Contents
 
-giusto -> https://elearning.unimib.it/mod/kalvidres/lti_launch.php?courseid=31195&height=285&width=400&withblocks=0&source=http%3A%2F%2Fkaltura-kaf-uri.com%2Fbrowseandembed%2Findex%2Fmedia%2Fentryid%2F1_u943i5rf%2FshowDescription%2Ffalse%2FshowTitle%2Ffalse%2FshowTags%2Ffalse%2FshowDuration%2Ffalse%2FshowOwner%2Ffalse%2FshowUploadDate%2Ffalse%2FplayerSize%2F400x285%2FplayerSkin%2F41280022%2F
-          https://elearning.unimib.it/mod/kalvidres/lti_launch.php?courseid=31195&height=285&width=400&withblocks=0&source=http%3A%2F%2Fkaltura-kaf-uri.com%2Fbrowseandembed%2Findex%2Fmedia%2Fentryid%2F1_v2u47kjs%2FshowDescription%2Ffalse%2FshowTitle%2Ffalse%2FshowTags%2Ffalse%2FshowDuration%2Ffalse%2FshowOwner%2Ffalse%2FshowUploadDate%2Ffalse%2FplayerSize%2F400x285%2FplayerSkin%2F46495023%2F
+- [About](#about)
+- [Getting Started](#getting_started)
+- [Usage](#usage)
+
+## About <a name = "about"></a>
+
+Needed a fast way to watch accelerated lessons from e leanring on ipad, after trying unsuccessfully few plugins i wrote this telegram bot to dowload the network url of the lesson to play in VLC Network section. Doing so i can accelerate the lesson as fast or as slow as i want.
+
+In a second time i added also the ability to download lesson file of an entire page course
+## Getting Started <a name = "getting_started"></a>
+
+Since this project involves personal credential from the platform e-learning the istance of the bot is private for each person, so if you want to use it you have to create a new bot on telegram and configure the project on your server or local machine.
+For creating the bot use [BotFather](https://telegram.me/BotFather) by telegram itself
+
+
+### Installing
+
+Clone the repo on your server or local machine
+
+```
+git clone https://github.com/ruggero95/bicoccaLessonsUrlExtractor.git
+```
+
+once you cloned it, create .env file for configuration. Just copy .evn.sample and rename it
+
+```
+cp .env.sample .env
+```
+
+Now in the .env add
+-   key of the bot
+- port of your app
+- url of your app
+- your telegram username for prevent access to other person
+-   your user and password of e learning
+## Usage <a name = "usage"></a>
+
+just run, docker file incoming
+```
+npm start
+```
