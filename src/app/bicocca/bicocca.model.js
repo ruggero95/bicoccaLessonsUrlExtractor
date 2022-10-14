@@ -10,7 +10,7 @@ const EventEmitter = require('events');
 const dayjs = require('dayjs');
 const downloadUpdater = new EventEmitter();
 
-const puppeteerBicoccaJs = {
+const bicoccaModel = {
     videoPath: `${__dirname}/../../video`,
     checkLessonUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/mod\/kalvidres\/view\.php\?id\=/
@@ -44,7 +44,7 @@ const puppeteerBicoccaJs = {
             await page.waitForSelector('button[name=_eventId_proceed]')
             await page.waitForTimeout(2000)
             await page.click('button[name=_eventId_proceed]');
-            await puppeteerBicoccaJs.waitPage(page, false)
+            await bicoccaModel.waitPage(page, false)
             //await page.waitForSelector('div[id=nav-drawer]');
             resolve({ page: page, browser: browser })
         })
@@ -96,13 +96,13 @@ const puppeteerBicoccaJs = {
     setup: async (url) => {
         return new Promise(async (resolve, reject) => {
 
-            let { page, browser } = await puppeteerBicoccaJs.doLogin();
+            let { page, browser } = await bicoccaModel.doLogin();
 
             await page.goto(url);
-            await puppeteerBicoccaJs.waitPage(page)
+            await bicoccaModel.waitPage(page)
 
 
-            let videoUrl = await puppeteerBicoccaJs.getVideoUrl(page)
+            let videoUrl = await bicoccaModel.getVideoUrl(page)
 
             await browser.close();
 
@@ -113,20 +113,20 @@ const puppeteerBicoccaJs = {
 
     },
     convertM3U8: async (links, folderName) => {
-        const tempPath = `${puppeteerBicoccaJs.videoPath}/${folderName}/tmp`
+        const tempPath = `${bicoccaModel.videoPath}/${folderName}/tmp`
         if (fs.existsSync(tempPath)) {
             fs.rmSync(tempPath,{ recursive: true })
             fs.mkdirSync(tempPath, { recursive: true, mode: 0777 })
         }
         for (let i in links) {
-            let fileName = `${puppeteerBicoccaJs.videoPath}/${folderName}/${i}_${links[i].title}.mp4`
+            let fileName = `${bicoccaModel.videoPath}/${folderName}/${i}_${links[i].title}.mp4`
 
             console.log(fileName)
             if (!fs.existsSync(fileName)) {
                 console.log('file non esiste, processo')
                 const fileLink = links[i].m3u8
                 try{
-                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
+                    await bicoccaModel.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
                 }catch(e){
                     console.log(e.code)
                     console.log(e)
@@ -134,7 +134,7 @@ const puppeteerBicoccaJs = {
                     console.log('retry in 10 sec')
                     await new Promise(resolve => setTimeout(resolve, 10000));
                     console.log('retry'+dayjs().format('YYYY-MM-DD HH:mm:ss'))
-                    await puppeteerBicoccaJs.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
+                    await bicoccaModel.processSingleM3U8(fileLink, fileName, i, tempPath, links.length)
                 }
             }
 
@@ -159,14 +159,14 @@ const puppeteerBicoccaJs = {
         }
     },
     pageAnalizer: async (url) => {
-        let { page, browser } = await puppeteerBicoccaJs.doLogin()
+        let { page, browser } = await bicoccaModel.doLogin()
         let result = []
         await page.goto(url);
         let folderName = await page.title();
 
-        folderName = puppeteerBicoccaJs.sanitizeName(folderName)
+        folderName = bicoccaModel.sanitizeName(folderName)
 
-        const coursePath = `${puppeteerBicoccaJs.videoPath}/${folderName}`
+        const coursePath = `${bicoccaModel.videoPath}/${folderName}`
         let dataBkp = `${coursePath}/data.json`
 
         if (!fs.existsSync(coursePath)) {
@@ -180,7 +180,7 @@ const puppeteerBicoccaJs = {
             result = JSON.parse(data)
             console.log(result)
             downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: result.length });
-            return puppeteerBicoccaJs.convertM3U8(result, folderName)
+            return bicoccaModel.convertM3U8(result, folderName)
         }
         const elements = await page.$x('//a[@class="aalink"  and contains(@href,\'kalvidres\')]');
         //console.log(elements)
@@ -193,7 +193,7 @@ const puppeteerBicoccaJs = {
 
             result = [...result, {
                 url: href,
-                title: puppeteerBicoccaJs.sanitizeName(text)
+                title: bicoccaModel.sanitizeName(text)
             }]
         }
 
@@ -201,7 +201,7 @@ const puppeteerBicoccaJs = {
         for (i in result) {
             //for(let i=0; i<1; i++){
             await page.goto(result[i].url);
-            let url = await puppeteerBicoccaJs.getVideoUrl(page)
+            let url = await bicoccaModel.getVideoUrl(page)
             if (i != 0 && i % 10 == 0) {
                 page.waitForTimeout(2000)
             }
@@ -213,9 +213,9 @@ const puppeteerBicoccaJs = {
         let data = JSON.stringify(result);
         fs.writeFileSync(dataBkp, data);
 
-        return puppeteerBicoccaJs.convertM3U8(result, folderName)
+        return bicoccaModel.convertM3U8(result, folderName)
     }
 
 }
 
-module.exports = { puppeteerBicoccaJs, downloadUpdater }
+module.exports = { bicoccaModel, downloadUpdater }
