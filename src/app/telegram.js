@@ -126,7 +126,15 @@ const telegramModel = {
             })
 
             const folderName = await bicoccaModel.pageAnalizer(url)
-            return await ctx.reply(`End of analisis, download at ${process.env.APP_URL}/get-course?filename=${folderName}`)
+            /* await ctx.reply("End of analisis, download here", {
+                reply_markup: {
+                    inline_keyboard: [                       
+                        [ { text: "Open in browser", url: `${process.env.APP_URL}/bicocca/get-course?filename=${folderName}` } ]
+                    ]
+                }
+            });*/
+            await ctx.reply('End of analisis')
+            return await ctx.reply(`${process.env.APP_URL}/bicocca/get-course?filename=${folderName}`)
         } else {
             return await ctx.reply('Url invalid for a course');
         }
