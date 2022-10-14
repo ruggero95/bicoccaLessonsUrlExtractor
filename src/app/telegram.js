@@ -125,8 +125,8 @@ const telegramModel = {
                 }
             })
 
-            await bicoccaModel.pageAnalizer(url)
-            return await ctx.reply('End')
+            const folderName = await bicoccaModel.pageAnalizer(url)
+            return await ctx.reply(`End of analisis, download at ${process.env.APP_URL}/get-course?filename=${folderName}`)
         } else {
             return await ctx.reply('Url invalid for a course');
         }
