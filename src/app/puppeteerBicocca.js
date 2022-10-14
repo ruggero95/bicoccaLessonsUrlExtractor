@@ -12,10 +12,6 @@ const downloadUpdater = new EventEmitter();
 
 const puppeteerBicoccaJs = {
     videoPath: `${__dirname}/../../video`,
-    test: async () => {
-        let res = await puppeteerBicoccaJs.setup('https://elearning.unimib.it/mod/kalvidres/view.php?id=598157')
-        console.log(res)
-    },
     checkLessonUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/mod\/kalvidres\/view\.php\?id\=/
         if (url.match(pattern)) {
