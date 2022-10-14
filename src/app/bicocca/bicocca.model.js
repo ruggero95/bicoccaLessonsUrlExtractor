@@ -175,10 +175,9 @@ const bicoccaModel = {
 
         if (fs.existsSync(dataBkp)) {
             await browser.close()
-            console.log('')
+
             const data = fs.readFileSync(dataBkp, 'utf8')
             result = JSON.parse(data)
-            console.log(result)
             downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: result.length });
             return bicoccaModel.convertM3U8(result, folderName)
         }
