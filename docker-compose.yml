@@ -1,0 +1,8 @@
+services:
+  node:
+    container_name: "node-service"
+    build: .
+    volumes:
+      - ./video:/home/node/app/video
+    ports:
+      - ${PORT}:${PORT}
