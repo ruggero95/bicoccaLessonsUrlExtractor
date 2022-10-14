@@ -14,12 +14,13 @@ class BicoccaService {
     async zipContent(fileName) {
         //check if zip exists, if exist delete it
         const zipPath = `${__dirname}/../../zipCourse/`
-        const zipName = `${fileName}.zip`
+        const zipName = `${fileName}`
         if(fs.existsSync(`${zipPath}${zipName}`)){
             fs.rm(zipName)
         }
+        
         const zipFile = new ZipFile(zipPath,zipName)
-        zipFile.addDirectoryToZip(`${bicoccaModel.videoPath}/${fileName}`, fileName)
+        zipFile.addDirectoryToZip(`${bicoccaModel.videoPath}/${fileName}/`, fileName)
         await zipFile.close()
         return {zipPath:zipPath, zipName:zipName}
     }
