@@ -28,7 +28,7 @@ const bicoccaModel = {
     },
     doLogin: async () => {
         return new Promise(async (resolve, reject) => {
-            const browser = await puppeteer.launch({ headless: true, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', });
+            const browser = await puppeteer.launch({ headless: true, executablePath: process.env.CHROME_PATH, });
             const page = await browser.newPage();
             await page.goto('https://elearning.unimib.it/login/index.php');
 
