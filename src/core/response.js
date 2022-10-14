@@ -11,6 +11,10 @@ class ApiResponse{
     send(res){
         return res.status(this.statusResponse).json({...this})
     }
+
+    download(res){
+        return res.download(this.data)
+    }
 }
 
 class SuccessResponse extends ApiResponse{
