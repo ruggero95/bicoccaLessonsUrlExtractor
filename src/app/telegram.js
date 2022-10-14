@@ -10,42 +10,7 @@ const { enter, leave } = Scenes.Stage;
 const { bicoccaModel, downloadUpdater } = require('./bicocca/bicocca.model')
 const WAIT_MESSAGE = 'Wait some minutes...⏳'
 const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
-const telegram = {
-    init: () => {
-        const app = new Telegraf(API_TOKEN);
 
-        if (offline == 'false') {
-            app.telegram.setWebhook(`${URL}/bot${API_TOKEN}`);
-            app.startWebhook(`/bot${API_TOKEN}`, null, PORT);
-        } else {
-            console.log(`https://api.telegram.org/bot${process.env.API_TOKEN}/setWebhook?url=`)
-            axios.get(`https://api.telegram.org/bot${process.env.API_TOKEN}/setWebhook?url=`)
-        }
-
-        telegram.listners(app)
-
-        if (offline == 'true') {
-            app.startPolling();
-        }
-        return app
-    },
-    listners: (app) => {
-        app.on('text', async function (ctx) {
-            if (ctx.message.from.username != 'RuggeroPanzeri') {
-                return ctx.reply('Non autorizzato, mi spiace')
-            }
-            ctx.reply(STD_MESSAGE);
-            let url = ctx.message.text
-            if (bicoccaModel.checkUrlValidity(url)) {
-                let res_url = await bicoccaModel.setup(url)
-                ctx.reply(res_url)
-            } else {
-                ctx.reply('Url non corretto');
-            }
-
-        })
-    }
-}
 const telegramModel = {
     linkLesson: "Link Lesson",
     linkCourse: "Link Course",
