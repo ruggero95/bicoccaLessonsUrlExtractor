@@ -9,7 +9,7 @@
 
 ## About <a name = "about"></a>
 
-Needed a fast way to watch accelerated lessons from e leanring on ipad, after trying unsuccessfully few plugins i wrote this telegram bot to dowload the network url of the lesson to play in VLC Network section. Doing so i can accelerate the lesson as fast or as slow as i want.
+Needed a fast way to watch accelerated lessons from e learning on ipad, after trying unsuccessfully few plugins i wrote this telegram bot to dowload the network url of the lesson to play in VLC Network section. Doing so i can accelerate the lesson as fast or as slow as i want.
 
 In a second time i added also the ability to download lesson file of an entire page course
 ## Getting Started <a name = "getting_started"></a>
