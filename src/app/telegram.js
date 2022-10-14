@@ -7,7 +7,7 @@ const URL = process.env.URL || 'https://hps.solunicanet.it';
 const axios = require('axios');
 const { Telegraf, Markup, Scenes } = require('telegraf')
 const { enter, leave } = Scenes.Stage;
-const { puppeteerBicoccaJs, downloadUpdater } = require('./puppeteerBicocca')
+const { bicoccaModel, downloadUpdater } = require('./bicocca/bicocca.model')
 const WAIT_MESSAGE = 'Wait some minutes...⏳'
 const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
 const telegram = {
@@ -36,8 +36,8 @@ const telegram = {
             }
             ctx.reply(STD_MESSAGE);
             let url = ctx.message.text
-            if (puppeteerBicoccaJs.checkUrlValidity(url)) {
-                let res_url = await puppeteerBicoccaJs.setup(url)
+            if (bicoccaModel.checkUrlValidity(url)) {
+                let res_url = await bicoccaModel.setup(url)
                 ctx.reply(res_url)
             } else {
                 ctx.reply('Url non corretto');
@@ -46,7 +46,7 @@ const telegram = {
         })
     }
 }
-const tel = {
+const telegramModel = {
     linkLesson: "Link Lesson",
     linkCourse: "Link Course",
     linkLessonScene: "linkLesson",
@@ -57,7 +57,7 @@ const tel = {
     commands: async (ctx) => {
         return await ctx.reply('Choose an option', Markup
             .keyboard([
-                [tel.linkLesson, tel.linkCourse],
+                [telegramModel.linkLesson, telegramModel.linkCourse],
                 ['/back'],
             ])
             .resize()
@@ -65,37 +65,37 @@ const tel = {
     },
     getLinkLessonScene: () => {
         //extract link of a lesson to for VLC network in order to accelerate it or see on ipads
-        const s = new Scenes.BaseScene(tel.linkLessonScene);
+        const s = new Scenes.BaseScene(telegramModel.linkLessonScene);
         s.enter(ctx => ctx.reply("Send link of a lesson"));
 
         //on leave resend commands
-        s.leave(ctx => tel.commands(ctx));
+        s.leave(ctx => telegramModel.commands(ctx));
         s.command("back", leave());
         //if change button, change scene
-        s.hears(tel.linkCourse, (ctx) => ctx.scene.enter(tel.linkCourseScene))
+        s.hears(telegramModel.linkCourse, (ctx) => ctx.scene.enter(telegramModel.linkCourseScene))
         //start analisis
-        s.on("text", ctx => tel.startLinkScan(ctx));
+        s.on("text", ctx => telegramModel.startLinkScan(ctx));
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
     getLinkCourseScene: () => {
-        const s = new Scenes.BaseScene(tel.linkCourseScene);
+        const s = new Scenes.BaseScene(telegramModel.linkCourseScene);
         s.enter(ctx => ctx.reply("Send link of a course"));
 
         //on leave resend commands
-        s.leave(ctx => tel.commands(ctx));
+        s.leave(ctx => telegramModel.commands(ctx));
         s.command("back", leave());
         //if change button, change scene
-        s.hears(tel.linkLesson, (ctx) => ctx.scene.enter(tel.linkLessonScene))
-        s.on("text", ctx => tel.startCourseScan(ctx));
+        s.hears(telegramModel.linkLesson, (ctx) => ctx.scene.enter(telegramModel.linkLessonScene))
+        s.on("text", ctx => telegramModel.startCourseScan(ctx));
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
     startLinkScan: async (ctx) => {
         let url = ctx.message.text
-        if (puppeteerBicoccaJs.checkLessonUrlValidity(url)) {
+        if (bicoccaModel.checkLessonUrlValidity(url)) {
             await ctx.reply(WAIT_MESSAGE)
-            let res_url = await puppeteerBicoccaJs.setup(url)
+            let res_url = await bicoccaModel.setup(url)
             return await ctx.reply(res_url)
         } else {
             return await ctx.reply('Url invalid for a lesson');
@@ -103,7 +103,7 @@ const tel = {
     },
     startCourseScan: async (ctx) => {
         let url = ctx.message.text
-        if (puppeteerBicoccaJs.checkCourseUrlValidity(url)) {
+        if (bicoccaModel.checkCourseUrlValidity(url)) {
             let wait = await ctx.reply(WAIT_MESSAGE_COURSE)
             let collected = await ctx.reply('TotLinks:0  Collected:0')
             let downloaded = await ctx.reply('TotLinks:0  Downloaded:0')
@@ -125,7 +125,7 @@ const tel = {
                 }
             })
 
-            await puppeteerBicoccaJs.pageAnalizer(url)
+            await bicoccaModel.pageAnalizer(url)
             return await ctx.reply('End')
         } else {
             return await ctx.reply('Url invalid for a course');
@@ -133,4 +133,4 @@ const tel = {
     }
 }
 
-module.exports = tel
+module.exports = telegramModel
