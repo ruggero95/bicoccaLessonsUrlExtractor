@@ -11,7 +11,7 @@ const dayjs = require('dayjs');
 const downloadUpdater = new EventEmitter();
 
 const bicoccaModel = {
-    videoPath: `${__dirname}/../../video`,
+    videoPath: `${__dirname}/../../../video`,
     checkLessonUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/mod\/kalvidres\/view\.php\?id\=/
         if (url.match(pattern)) {
@@ -29,7 +29,7 @@ const bicoccaModel = {
     doLogin: async () => {
         return new Promise(async (resolve, reject) => {
             //login:  https://idp-idm.unimib.it/idp/profile/SAML2/Redirect/SSO?execution=e1s2
-            const browser = await puppeteer.launch({ headless: false, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', });
+            const browser = await puppeteer.launch({ headless: true, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', });
             const page = await browser.newPage();
             //await page.setViewport({ width: 800, height: 600 })
             await page.goto('https://elearning.unimib.it/login/index.php');
