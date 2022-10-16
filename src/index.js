@@ -8,12 +8,22 @@ process.on('uncaughtException', (err) => {
    console.log(err)    
 });
 
-bot.launch()
+
+if(process.env.NODE_ENV=='production'){
+    (async ()=>{
+        const wb = await bot.createWebhook({ domain: process.env.APP_URL })
+        app.use(wb);
+        app.listen(PORT, () => {
+            console.log(`Running on port ${PORT}`)
+        })
+    })();
+}else{
+    bot.launch()
+    app.listen(PORT, () => {
+        console.log(`Running on port ${PORT}`)
+    })
+}
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-app.listen(PORT,()=>{
-    console.log(`Running on port ${PORT}`)
-})
