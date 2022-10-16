@@ -39,10 +39,24 @@ Now in the .env add
 - your telegram username for prevent access to other person
 -   your user and password of e learning
 ## Usage <a name = "usage"></a>
+3 different ways to start the application:
 
-just run, docker file incoming
+1) without docker run
 ```
-npm start
+npm install && npm start
+```
+
+2) with docker
+```
+docker build -t bicocca-url-extractor .
+```
+```
+docker run -p PORT:PORT -v ./video:/home/node/app/video bicocca-url-extractor
+```
+
+3) with docker compose
+```
+docker-compose up
 ```
 
 ## Demo <a name="demo"></a>
