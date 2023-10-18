@@ -3,9 +3,10 @@ require('dotenv').config({ path: path.resolve('./config/.env') })
 const { mConverter, mDownloader, mParser } = require("node-m3u8-to-mp4");
 const puppeteer = require('puppeteer')
 const fs = require('fs')
-const user = process.env.USER || ''
+const user = process.env.USEREMAIL || ''
 const psw = process.env.PSW || ''
 
+const headless =  process.env.HEADLESS ?  process.env.HEADLESS==='true' : true
 const EventEmitter = require('events');
 const dayjs = require('dayjs');
 const downloadUpdater = new EventEmitter();
@@ -27,8 +28,11 @@ const bicoccaModel = {
         return false
     },
     doLogin: async () => {
-        return new Promise(async (resolve, reject) => {
-            const browser = await puppeteer.launch({ headless: true, executablePath: process.env.CHROME_PATH, args:["--no-sandbox"]});
+        return new Promise(async (resolve, reject) => {    
+            console.log(headless)       
+            console.log(typeof headless)       
+            
+            const browser = await puppeteer.launch({ headless, executablePath: process.env.CHROME_PATH, args:["--no-sandbox"]});
             const page = await browser.newPage();
             await page.goto('https://elearning.unimib.it/login/index.php');
 
@@ -42,7 +46,7 @@ const bicoccaModel = {
             await page.waitForSelector('button[name=_eventId_proceed]')
             await page.waitForTimeout(2000)
             await page.click('button[name=_eventId_proceed]');
-            await bicoccaModel.waitPage(page, false)
+            await page.waitForXPath('//h1[contains(text(),"Dashboard")]')
             resolve({ page: page, browser: browser })
         })
 
@@ -99,8 +103,7 @@ const bicoccaModel = {
             let { page, browser } = await bicoccaModel.doLogin();
 
             await page.goto(url);
-            await bicoccaModel.waitPage(page)
-
+            await page.waitForXPath('//span[contains(text(),"Unità didattica")]')
 
             let videoUrl = await bicoccaModel.getVideoUrl(page)
 

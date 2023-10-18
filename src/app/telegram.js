@@ -1,12 +1,6 @@
-const path = require('path')
 require('dotenv').config()
-const API_TOKEN = process.env.API_TOKEN || '';
-const offline = process.env.OFFLINE || 'false'//non bool from env
-const PORT = process.env.PORT || 3029;
-const URL = process.env.URL || 'https://hps.solunicanet.it';
-const axios = require('axios');
-const { Telegraf, Markup, Scenes } = require('telegraf')
-const { enter, leave } = Scenes.Stage;
+const {  Markup, Scenes } = require('telegraf')
+const { leave } = Scenes.Stage;
 const { bicoccaModel, downloadUpdater } = require('./bicocca/bicocca.model')
 const WAIT_MESSAGE = 'Wait some minutes...⏳'
 const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
