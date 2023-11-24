@@ -55,6 +55,7 @@ const telegramModel = {
         if (bicoccaModel.checkLessonUrlValidity(url)) {
             await ctx.reply(WAIT_MESSAGE)
             let res_url = await bicoccaModel.setup(url)
+            
             return await ctx.reply(res_url)
         } else {
             return await ctx.reply('Url invalid for a lesson');

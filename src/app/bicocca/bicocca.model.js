@@ -5,7 +5,7 @@ const puppeteer = require('puppeteer')
 const fs = require('fs')
 const user = process.env.USEREMAIL || ''
 const psw = process.env.PSW || ''
-
+const logger = require('../../core/logger')
 const headless =  process.env.HEADLESS ?  process.env.HEADLESS==='true' : true
 const EventEmitter = require('events');
 const dayjs = require('dayjs');
@@ -29,11 +29,10 @@ const bicoccaModel = {
     },
     doLogin: async () => {
         return new Promise(async (resolve, reject) => {    
-            console.log(headless)       
-            console.log(typeof headless)       
-            
+
             const browser = await puppeteer.launch({ headless, executablePath: process.env.CHROME_PATH, args:["--no-sandbox"]});
             const page = await browser.newPage();
+            logger.info('Browser istanziato')
             await page.goto('https://elearning.unimib.it/login/index.php');
 
 
@@ -47,6 +46,7 @@ const bicoccaModel = {
             await page.waitForTimeout(2000)
             await page.click('button[name=_eventId_proceed]');
             await page.waitForXPath('//h1[contains(text(),"Dashboard")]')
+            logger.info('Login eseguito')
             resolve({ page: page, browser: browser })
         })
 
@@ -65,14 +65,14 @@ const bicoccaModel = {
         return string.replace('Kaltura Video Resource', '').replace(/ /g, '_').replace(/\//g, '').replace(/\\/g, '').replace(/\:/g, '').replace(/\-/g, '')
     },
     getVideoUrl: async (page) => {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve, reject) => {            
             const [elementHandle] = await page.$x('//*[@id="contentframe"]');
             const propertyHandle = await elementHandle.getProperty('src');
             const propertyValue = await propertyHandle.jsonValue();
 
             await page.goto(propertyValue);
             await page.waitForSelector('iframe[id=kplayer_ifp]');
-
+            logger.info('attendo player start')
             await page.waitForTimeout(2000)
             page.on('response', async (response) => {
                 let pattern = /a.mp4\/index.m3u8/
@@ -83,9 +83,10 @@ const bicoccaModel = {
                         let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
                         pl.sendNotification('doPause')
                     }).catch(() => {
-                        console.log('errore su pausa, la navigazione è terminata')
+                        logger.error('errore su pausa, la navigazione è terminata')
                     });
                     //console.log(url)
+                    logger.info('link streaming ottenuto')
                     resolve(url)
                 }
             });
@@ -104,12 +105,13 @@ const bicoccaModel = {
 
             await page.goto(url);
             await page.waitForXPath('//span[contains(text(),"Unità didattica")]')
-
+            logger.info('alla pagina della lezione')
             let videoUrl = await bicoccaModel.getVideoUrl(page)
 
             await browser.close();
+            logger.info('fine')
+            resolve(videoUrl)         
 
-            resolve(videoUrl)
             //PRENDO I FRAME SRC E LO VISITO
             //var pl = document.getElementById(kMainPlayerEmbedObject.targetId);pl.sendNotification('doPlay')
         })
