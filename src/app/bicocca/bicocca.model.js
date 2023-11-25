@@ -15,24 +15,21 @@ const bicoccaModel = {
     videoPath: `${__dirname}/../../../video`,
     checkLessonUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/mod\/kalvidres\/view\.php\?id\=/
-        if (url.match(pattern)) {
-            return true
-        }
-        return false
+        return url.match(pattern) ? true : false
     },
     checkCourseUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/course\/view\.php\?id\=/
-        if (url.match(pattern)) {
-            return true
-        }
-        return false
+        return url.match(pattern) ? true : false       
     },
-    doLogin: async () => {
+    doLogin: async (updater) => {
         return new Promise(async (resolve, reject) => {    
 
             const browser = await puppeteer.launch({ headless, executablePath: process.env.CHROME_PATH, args:["--no-sandbox"]});
             const page = await browser.newPage();
+            
             logger.info('Browser istanziato')
+            updater.setSetup('browser')
+          
             await page.goto('https://elearning.unimib.it/login/index.php');
 
 
@@ -47,6 +44,7 @@ const bicoccaModel = {
             await page.click('button[name=_eventId_proceed]');
             await page.waitForXPath('//h1[contains(text(),"Dashboard")]')
             logger.info('Login eseguito')
+            updater.setSetup('login')
             resolve({ page: page, browser: browser })
         })
 
@@ -64,7 +62,7 @@ const bicoccaModel = {
         }
         return string.replace('Kaltura Video Resource', '').replace(/ /g, '_').replace(/\//g, '').replace(/\\/g, '').replace(/\:/g, '').replace(/\-/g, '')
     },
-    getVideoUrl: async (page) => {
+    getVideoUrl: async (page, updater) => {
         return new Promise(async (resolve, reject) => {            
             const [elementHandle] = await page.$x('//*[@id="contentframe"]');
             const propertyHandle = await elementHandle.getProperty('src');
@@ -73,6 +71,7 @@ const bicoccaModel = {
             await page.goto(propertyValue);
             await page.waitForSelector('iframe[id=kplayer_ifp]');
             logger.info('attendo player start')
+            updater.setSetup('player')
             await page.waitForTimeout(2000)
             page.on('response', async (response) => {
                 let pattern = /a.mp4\/index.m3u8/
@@ -87,6 +86,7 @@ const bicoccaModel = {
                     });
                     //console.log(url)
                     logger.info('link streaming ottenuto')
+                    updater.setSetup('link')
                     resolve(url)
                 }
             });
@@ -98,18 +98,22 @@ const bicoccaModel = {
         })
 
     },
-    setup: async (url) => {
+    setup: async (url, updater) => {
         return new Promise(async (resolve, reject) => {
 
-            let { page, browser } = await bicoccaModel.doLogin();
+            let { page, browser } = await bicoccaModel.doLogin(updater);
 
             await page.goto(url);
             await page.waitForXPath('//span[contains(text(),"Unità didattica")]')
             logger.info('alla pagina della lezione')
-            let videoUrl = await bicoccaModel.getVideoUrl(page)
+            updater.setSetup('lezione')
+
+            let videoUrl = await bicoccaModel.getVideoUrl(page, updater)
 
             await browser.close();
             logger.info('fine')
+            updater.setSetup('fine')
+
             resolve(videoUrl)         
 
             //PRENDO I FRAME SRC E LO VISITO

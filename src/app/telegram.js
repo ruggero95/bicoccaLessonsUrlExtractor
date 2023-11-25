@@ -1,10 +1,11 @@
 require('dotenv').config()
 const {  Markup, Scenes } = require('telegraf')
 const { leave } = Scenes.Stage;
-const { bicoccaModel, downloadUpdater } = require('./bicocca/bicocca.model')
+const { bicoccaModel, downloadUpdater, buildUpdateMessage } = require('./bicocca/bicocca.model')
 const WAIT_MESSAGE = 'Wait some minutes...⏳'
 const WAIT_MESSAGE_COURSE = 'This process it can takes hours...⏳'
-
+const logger = require('./../core/logger');
+const { Updater } = require('./updater');
 const telegramModel = {
     linkLesson: "Link Lesson",
     linkCourse: "Link Course",
@@ -50,16 +51,29 @@ const telegramModel = {
         s.on("message", ctx => ctx.reply("Only link please"));
         return s
     },
+    updateMessageStatus: (ctx, chat_id, message_id)=>{
+        return async (message)=>{
+            try{
+                await ctx.telegram.editMessageText(chat_id, message_id, undefined, message)
+            }catch(e){
+                logger.error('cannot send message update status')
+                logger.error(e)
+            }
+    
+        }
+    },
     startLinkScan: async (ctx) => {
         let url = ctx.message.text
-        if (bicoccaModel.checkLessonUrlValidity(url)) {
-            await ctx.reply(WAIT_MESSAGE)
-            let res_url = await bicoccaModel.setup(url)
-            
-            return await ctx.reply(res_url)
-        } else {
+        if (!bicoccaModel.checkLessonUrlValidity(url)) {
             return await ctx.reply('Url invalid for a lesson');
         }
+        await ctx.reply(WAIT_MESSAGE)
+        const updater = new Updater()           
+        const msgUpdate = await ctx.reply(updater.toString())
+        updater.unsubscribe(telegramModel.updateMessageStatus(ctx, msgUpdate.chat.id, msgUpdate.message_id))
+        updater.subscribe(telegramModel.updateMessageStatus(ctx, msgUpdate.chat.id, msgUpdate.message_id))            
+        let res_url = await bicoccaModel.setup(url, updater)            
+        return await ctx.reply(res_url)        
     },
     startCourseScan: async (ctx) => {
         let url = ctx.message.text
