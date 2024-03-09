@@ -104,7 +104,7 @@ const bicoccaModel = {
             let { page, browser } = await bicoccaModel.doLogin(updater);
 
             await page.goto(url);
-            await page.waitForXPath('//span[contains(text(),"Unità didattica")]')
+            await page.waitForSelector('span.card-suptitle.course-type.text-truncate')
             logger.info('alla pagina della lezione')
             updater.setSetup('lezione')
 
