@@ -98,8 +98,11 @@ const telegramModel = {
                     console.log(e)
                 }
             })
-
-            const folderName = await bicoccaModel.pageAnalizer(url)
+            const updater = new Updater()           
+            const msgUpdate = await ctx.reply(updater.toString())
+            updater.unsubscribe(telegramModel.updateMessageStatus(ctx, msgUpdate.chat.id, msgUpdate.message_id))
+            updater.subscribe(telegramModel.updateMessageStatus(ctx, msgUpdate.chat.id, msgUpdate.message_id))  
+            const folderName = await bicoccaModel.pageAnalizer(url, updater)
             /* await ctx.reply("End of analisis, download here", {
                 reply_markup: {
                     inline_keyboard: [                       

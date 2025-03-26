@@ -1,5 +1,6 @@
 const bot = require('./bot')
 const app = require('./app')
+const axios = require('axios')
 require('dotenv').config()
 const PORT = process.env.PORT || 4003
 process.on('uncaughtException', (err) => {
@@ -18,10 +19,20 @@ if(process.env.NODE_ENV=='production'){
         })
     })();
 }else{
-    bot.launch()
-    app.listen(PORT, () => {
-        console.log(`Running on port ${PORT}`)
-    })
+    (async ()=>{
+        console.log('resetting')
+        //const response = await axios.get(`https://api.telegram.org/bot${process.env.API_TOKEN}/setWebhook?url=https://bicocca-bot.onrender.com`)
+        //const response = await axios.get(`https://api.telegram.org/bot${process.env.API_TOKEN}/getWebhookInfo`)
+        //const response = await axios.post(`https://api.telegram.org/bot${process.env.API_TOKEN}/deleteWebhook`)
+        //console.log(response)
+        //console.log(response.data)
+        bot.launch()
+        app.listen(PORT, () => {
+            console.log(`Running on port ${PORT}`)
+        })
+    })();
+
+    
 }
 
 // Enable graceful stop

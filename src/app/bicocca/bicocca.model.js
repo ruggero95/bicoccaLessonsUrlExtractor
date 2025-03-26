@@ -11,6 +11,10 @@ const EventEmitter = require('events');
 const dayjs = require('dayjs');
 const downloadUpdater = new EventEmitter();
 
+const timeout = (timeout)=>{
+    return new Promise(resolve => setTimeout(resolve, timeout));
+}
+
 const bicoccaModel = {
     videoPath: `${__dirname}/../../../video`,
     checkLessonUrlValidity: (url) => {
@@ -19,17 +23,17 @@ const bicoccaModel = {
     },
     checkCourseUrlValidity: (url) => {
         let pattern = /https\:\/\/elearning\.unimib\.it\/course\/view\.php\?id\=/
-        return url.match(pattern) ? true : false       
+        return url.match(pattern) ? true : false
     },
     doLogin: async (updater) => {
-        return new Promise(async (resolve, reject) => {    
+        return new Promise(async (resolve, reject) => {
 
-            const browser = await puppeteer.launch({ headless, executablePath: process.env.CHROME_PATH, args:["--no-sandbox"]});
+            const browser = await puppeteer.launch({ headless, args:["--no-sandbox"]});
             const page = await browser.newPage();
-            
+
             logger.info('Browser istanziato')
             updater.setSetup('browser')
-          
+
             await page.goto('https://elearning.unimib.it/login/index.php');
 
 
@@ -40,9 +44,9 @@ const bicoccaModel = {
             await page.$eval('input[name=j_username]', (el, value) => el.value = value, user);
             await page.$eval('input[name=j_password]', (el, value) => el.value = value, psw);
             await page.waitForSelector('button[name=_eventId_proceed]')
-            await page.waitForTimeout(2000)
+            await timeout(2000)
             await page.click('button[name=_eventId_proceed]');
-            await page.waitForXPath('//h1[contains(text(),"Dashboard")]')
+            await page.waitForSelector('::-p-xpath(//h2[contains(text(),"Blocchi di contenuto principale")])')
             logger.info('Login eseguito')
             updater.setSetup('login')
             resolve({ page: page, browser: browser })
@@ -52,7 +56,7 @@ const bicoccaModel = {
     waitPage: async (page, timeout = true) => {
         await page.waitForSelector('div[id=nav-drawer]');
         if (timeout) {
-            await page.waitForTimeout(2000)
+            await timeout(2000)
         }
         return
     },
@@ -63,24 +67,26 @@ const bicoccaModel = {
         return string.replace('Kaltura Video Resource', '').replace(/ /g, '_').replace(/\//g, '').replace(/\\/g, '').replace(/\:/g, '').replace(/\-/g, '')
     },
     getVideoUrl: async (page, updater) => {
-        return new Promise(async (resolve, reject) => {            
-            const [elementHandle] = await page.$x('//*[@id="contentframe"]');
+        return new Promise(async (resolve, reject) => {
+            const [elementHandle] = await page.$$('::-p-xpath(//*[@id="contentframe"])');
             const propertyHandle = await elementHandle.getProperty('src');
             const propertyValue = await propertyHandle.jsonValue();
 
             await page.goto(propertyValue);
-            await page.waitForSelector('iframe[id=kplayer_ifp]');
+            await page.waitForSelector('div[id=kplayer]');
             logger.info('attendo player start')
             updater.setSetup('player')
-            await page.waitForTimeout(2000)
+            await timeout(2000)
             page.on('response', async (response) => {
                 let pattern = /a.mp4\/index.m3u8/
                 let url = response.url()
                 if (url.match(pattern)) {
                     await page.evaluate(_ => {
                         // this will be executed within the page, that was loaded before
-                        let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
-                        pl.sendNotification('doPause')
+                        //let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
+                        //pl.sendNotification('doPause')
+                        kalturaPlayer.pause()
+
                     }).catch(() => {
                         logger.error('errore su pausa, la navigazione è terminata')
                     });
@@ -92,8 +98,9 @@ const bicoccaModel = {
             });
             await page.evaluate(_ => {
                 // this will be executed within the page, that was loaded before
-                let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
-                pl.sendNotification('doPlay')
+                //let pl = document.getElementById(kMainPlayerEmbedObject.targetId);
+                //pl.sendNotification('doPlay')
+                kalturaPlayer.play()
             });
         })
 
@@ -114,7 +121,7 @@ const bicoccaModel = {
             logger.info('fine')
             updater.setSetup('fine')
 
-            resolve(videoUrl)         
+            resolve(videoUrl)
 
             //PRENDO I FRAME SRC E LO VISITO
             //var pl = document.getElementById(kMainPlayerEmbedObject.targetId);pl.sendNotification('doPlay')
@@ -152,7 +159,7 @@ const bicoccaModel = {
         return folderName
     },
     processSingleM3U8: async(fileLink, fileName, i, tempPath, total)=>{
-        if (fileLink) {                        
+        if (fileLink) {
                 const list = await mParser(fileLink)
                 const medias = list.map((e) => `${e.url}`)
                 await mDownloader(medias, { targetPath: tempPath })
@@ -160,15 +167,15 @@ const bicoccaModel = {
                     console.log('convert error')
                     console.log(e.toString())
                 })
-                downloadUpdater.emit('updateDownloaded', { elementi: total, elaborati: (i+1) });          
+                downloadUpdater.emit('updateDownloaded', { elementi: total, elaborati: (i+1) });
         }
         if(i!=0 && i%10==0){
             //stoppo per 10 secondi ogni 10 download
             await new Promise(resolve => setTimeout(resolve, 10000));
         }
     },
-    pageAnalizer: async (url) => {
-        let { page, browser } = await bicoccaModel.doLogin()
+    pageAnalizer: async (url, updater) => {
+        let { page, browser } = await bicoccaModel.doLogin(updater)
         let result = []
         await page.goto(url);
         let folderName = await page.title();
@@ -190,13 +197,15 @@ const bicoccaModel = {
             downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: result.length });
             return bicoccaModel.convertM3U8(result, folderName)
         }
-        const elements = await page.$x('//a[@class="aalink"  and contains(@href,\'kalvidres\')]');
+        const elements = await page.$$('::-p-xpath(//a[contains(@class,\'aalink\') and contains(@href,\'kalvidres\')])');
         //console.log(elements)
+
         for (let i in elements) {
-            let hrefProp = await elements[i].getProperty('href')
+            const el = elements[i];
+            let hrefProp = await el.getProperty('href')
             //let [textElement] = await elements[i].$x('/span[@class="instancename"]//text()')
             let href = await hrefProp.jsonValue()
-            let textProp = await elements[i].getProperty('textContent')
+            let textProp = await el.getProperty('textContent')
             let text = await textProp.jsonValue()
 
             result = [...result, {
@@ -209,9 +218,9 @@ const bicoccaModel = {
         for (i in result) {
             //for(let i=0; i<1; i++){
             await page.goto(result[i].url);
-            let url = await bicoccaModel.getVideoUrl(page)
+            let url = await bicoccaModel.getVideoUrl(page, updater)
             if (i != 0 && i % 10 == 0) {
-                page.waitForTimeout(2000)
+                await timeout(2000)
             }
             result[i].m3u8 = url
             downloadUpdater.emit('updateCollected', { elementi: result.length, elaborati: (i+1) });
